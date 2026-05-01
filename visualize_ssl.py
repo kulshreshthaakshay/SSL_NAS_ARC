@@ -1,7 +1,7 @@
 """
 Visualize SSL embeddings using t-SNE, colored by market regime (volatility level).
 Saves: results/tsne_regime.png
-Also saves: results/t-SNE_SSL_Embeddings.png (colored by price direction)
+Also saves: results/t-SNE_SSL_Embeddings.png (colored by 30-day future direction)
 """
 import torch
 import numpy as np
@@ -17,7 +17,14 @@ results_dir.mkdir(exist_ok=True)
 
 # Load data
 print("Loading data...")
-windows = np.load(project_root / "data" / "processed" / "windows.npy")
+windows = np.load(project_root / "data" / "processed" / "windows_train.npy")
+labels_train = np.load(project_root / "data" / "processed" / "labels_train.npy")
+future_direction_labels = labels_train
+if len(windows) != len(future_direction_labels):
+    raise ValueError(
+        f"windows_train.npy and labels_train.npy mismatch: "
+        f"{len(windows)} vs {len(future_direction_labels)}"
+    )
 windows_tensor = torch.FloatTensor(windows)
 
 # Load trained SSL model
@@ -91,16 +98,16 @@ print(f"Saved: {output_regime}")
 plt.close()
 
 # ========================================
-# Plot 2: t-SNE colored by price direction
+# Plot 2: t-SNE colored by future price direction
 # ========================================
-print("Creating price direction visualization...")
-price_labels = (windows[:, -1, 0] > windows[:, 0, 0]).astype(int)
+print("Creating future direction visualization...")
+price_labels = future_direction_labels
 
 plt.figure(figsize=(10, 8))
 plt.style.use('seaborn-v0_8-whitegrid')
 
 colors_price = ['#3498db', '#e74c3c']  # Blue for down, Red for up
-labels_price = ['Price Down', 'Price Up']
+labels_price = ['Future Down', 'Future Up']
 
 for i, (name, color) in enumerate(zip(labels_price, colors_price)):
     mask = price_labels == i
@@ -109,7 +116,7 @@ for i, (name, color) in enumerate(zip(labels_price, colors_price)):
 
 plt.xlabel("t-SNE Component 1", fontsize=12)
 plt.ylabel("t-SNE Component 2", fontsize=12)
-plt.title("t-SNE of SSL Embeddings Colored by Price Direction", fontsize=14, fontweight='bold')
+plt.title("t-SNE of SSL Embeddings Colored by 30-Day Future Direction", fontsize=14, fontweight='bold')
 plt.legend(loc='upper right', fontsize=10)
 plt.tight_layout()
 

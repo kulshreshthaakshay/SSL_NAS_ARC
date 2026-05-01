@@ -16,7 +16,7 @@ with open(results_path, "r") as f:
     arch_weights_history = json.load(f)
 
 # Get operation names and number of epochs
-ops = list(arch_weights_history[0].keys())
+ops = [key for key in arch_weights_history[0].keys() if key not in {"epoch", "temperature"}]
 epochs = range(1, len(arch_weights_history) + 1)
 
 # Create figure with improved styling
@@ -50,7 +50,7 @@ plt.xlim(1, len(epochs))
 plt.ylim(20, 28)
 
 # Add annotation for final values
-final_weights = arch_weights_history[-1]
+final_weights = {key: value for key, value in arch_weights_history[-1].items() if key in ops}
 for op, weight in final_weights.items():
     label_name = op.replace('_', ' ').title()
     print(f"{label_name}: {weight*100:.2f}%")

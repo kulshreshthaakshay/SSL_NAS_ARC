@@ -11,7 +11,6 @@ from sklearn.manifold import TSNE
 
 from src.ssl.model import SSLModel
 from src.utils.augmentations import TimeSeriesAugmentor
-from financial_considerations import MarketRegimeDetector
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -218,20 +217,13 @@ if __name__ == "__main__":
             model.load_state_dict(checkpoint['model_state_dict'])
             model.eval()
             
-            logger.info("Generating market regime labels for visualization...")
-            # Detect regimes using returns (assuming first feature contains price-related info)
-            # This is a simplified approach - adjust based on your actual features
+            logger.info("Generating volatility regime labels for visualization...")
             try:
-                # Calculate returns from the data
-                # Assuming normalized data, we'll use the first feature as proxy
-                close_proxy = windows[:, -1, 0]  # Last timestep, first feature
-                returns = np.diff(close_proxy)
-                returns = np.concatenate([[0], returns])  # Pad to match length
-                
-                detector = MarketRegimeDetector()
-                regimes = detector.detect_regimes(returns)
-                
-                # Visualize
+                volatilities = np.array([np.std(np.diff(window[:, 0])) for window in windows])
+                low, high = np.percentile(volatilities, [33, 67])
+                regimes = np.zeros(len(volatilities), dtype=int)
+                regimes[(volatilities > low) & (volatilities <= high)] = 1
+                regimes[volatilities > high] = 2
                 visualize_embeddings(model, windows, regimes, device='cpu', 
                                    sample_size=min(500, len(windows)))
             except Exception as e:

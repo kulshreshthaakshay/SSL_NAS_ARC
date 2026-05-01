@@ -1,4 +1,3 @@
-# Create `src/ssl/model.py`
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,12 +7,17 @@ class SSLModel(nn.Module):
         super().__init__()
         self.temperature = temp
         
-        # Encoder for financial time series
-        self.encoder = nn.Sequential(
-            nn.LSTM(input_dim, hidden_dim, num_layers=2, 
-                   dropout=0.1, batch_first=True, bidirectional=True),
-            nn.LayerNorm([hidden_dim * 2])
+        self.hidden_dim = hidden_dim
+        self.encoder_lstm = nn.LSTM(
+            input_dim,
+            hidden_dim,
+            num_layers=2,
+            dropout=0.1,
+            batch_first=True,
+            bidirectional=True,
         )
+        self.vector_norm = nn.LayerNorm(hidden_dim * 2)
+        self.sequence_norm = nn.LayerNorm(hidden_dim * 2)
         
         # Projection head with layer normalization
         self.projector = nn.Sequential(
@@ -25,13 +29,14 @@ class SSLModel(nn.Module):
         )
         
     def encode(self, x):
-        # Get LSTM output
-        output, (hidden, _) = self.encoder[0](x)
-        # Use last hidden state from both directions
-        hidden = torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim=1)
-        # Apply layer normalization
-        hidden = self.encoder[1](hidden)
+        _, (hidden, _) = self.encoder_lstm(x)
+        hidden = torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1)
+        hidden = self.vector_norm(hidden)
         return hidden
+
+    def encode_sequence(self, x):
+        output, _ = self.encoder_lstm(x)
+        return self.sequence_norm(output)
         
     def forward(self, x1, x2):
         # Forward pass through encoder and projector
