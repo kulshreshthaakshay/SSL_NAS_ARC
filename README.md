@@ -165,59 +165,6 @@ python print_final_architecture.py # Print the selected architecture
 
 ---
 
-## Results
-
-### Classification Metrics
-
-| Metric | Value |
-|---|---|
-| Accuracy | 0.76 |
-| Precision | 0.78 |
-| Recall | 0.76 |
-| F1-Score | 0.76 |
-| AUC-ROC | 0.82 |
-
-### Financial Metrics
-
-| Metric | Value |
-|---|---|
-| Sharpe Ratio | 8.13 |
-| Max Drawdown | −1.44% |
-| Directional Accuracy | 76.47% |
-
-### NAS Architecture Selection
-
-The differentiable search converged to **Causal Conv1D** (26.40%) as the preferred operation, followed by Depthwise Separable Conv1D (26.28%), Dilated Conv1D (26.13%), and TCN (21.19%).
-
----
-
-## Methodology Details
-
-### Self-Supervised Pre-training
-
-- **Encoder**: 2-layer Bidirectional LSTM (hidden_dim=64, output_dim=128)
-- **Projector**: 2-layer MLP with LayerNorm (128 → 64 → 64)
-- **Loss**: InfoNCE contrastive loss with temperature τ=0.07
-- **Augmentations**: Composite of calibrated noise, feature dropout, volatility scaling, magnitude warping, and outlier injection (each applied with p=0.5)
-
-### Neural Architecture Search
-
-- **Search Strategy**: DARTS-style continuous relaxation with Gumbel-Softmax
-- **Temperature Schedule**: Cosine annealing from τ=5.0 → 0.1 over training
-- **Bilevel Optimization**: Architecture params (Adam, lr=4e-4) on validation set; model weights (Adam, lr=1e-3) on training set
-- **Entropy Regularization**: Penalty of 0.01 on architecture weight entropy to encourage decisive selection
-
-### Data Pipeline
-
-- **Stocks**: AAPL, JPM, XOM, JNJ, WMT (5 sectors for generalization)
-- **Period**: Jan 2022 — Jan 2023 (low-data regime)
-- **Features**: Returns, log-returns, RSI, MACD, Bollinger Bands, realized volatility, GARCH volatility, momentum, volume z-score, OBV, VWAP (14 features)
-- **Windows**: 30-day sliding windows
-- **Split**: 60% train / 20% val / 20% test (temporal, no shuffling)
-- **Normalization**: MinMaxScaler fit on training data only (no look-ahead bias)
-
----
-
 ## Citation
 
 If you use this code in your research, please cite:
